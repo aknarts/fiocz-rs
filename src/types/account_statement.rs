@@ -29,9 +29,9 @@ pub struct Info {
     pub date_end: String,
     pub year_list: Value,
     pub id_list: Option<i64>,
-    pub id_from: i64,
-    pub id_to: i64,
-    pub id_last_download: Option<String>,
+    pub id_from: Option<i64>,
+    pub id_to: Option<i64>,
+    pub id_last_download: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
