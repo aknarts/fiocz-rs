@@ -20,7 +20,5 @@ pub enum FioError {
     InvalidResponse(String),
     #[error("Missing body")]
     MissingBody,
-    #[error("Invalid body: {0}")]
-    InvalidBody(serde_xml_rs::Error),
 }
 

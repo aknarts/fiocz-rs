@@ -2,7 +2,8 @@ pub mod error;
 pub mod types;
 
 use reqwest::StatusCode;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned};
+use log::{debug, error};
 use crate::error::FioError;
 use crate::types::account_statement::Statement;
 use crate::types::transaction::Import;
@@ -23,8 +24,8 @@ impl Fio {
                 match de {
                     Ok(reply) => Ok(reply),
                     Err(e) => {
-                        println!("Couldn't parse reply for {} call: {}", rest_method, e);
-                        println!("Source JSON: {}", v);
+                        error!("Couldn't parse reply for {} call: {}", rest_method, e);
+                        debug!("Source JSON: {}", v);
                         Err(e.into())
                     }
                 }
@@ -61,17 +62,12 @@ impl Fio {
         }
     }
 
-    async fn api_post<U: Serialize>(&self, rest_method: &str, body: U) -> Result<String, FioError> {
+    async fn api_post(&self, rest_method: &str, body: String) -> Result<String, FioError> {
         let client = reqwest::Client::new();
-        let form = reqwest::multipart::Form::new().text("token", self.token.clone()).text("type", "xml").part("file", match reqwest::multipart::Part::text(match serde_xml_rs::to_string(&body) {
-            Ok(xml) => {
-                xml
-            }
-            Err(e) => { return Err(FioError::InvalidBody(e)); }
-        }).file_name("import.xml").mime_str("application/xml") {
-            Ok(file) => { file}
+        let form = reqwest::multipart::Form::new().text("token", self.token.clone()).text("type", "xml").part("file", match reqwest::multipart::Part::text(body).file_name("import.xml").mime_str("application/xml") {
+            Ok(file) => { file }
             Err(e) => {
-                return Err(e.into())
+                return Err(e.into());
             }
         });
         match client.post(format!("https://www.fio.cz/ib_api/rest/{}", rest_method)).multipart(form).send().await {
@@ -195,7 +191,7 @@ impl Fio {
     }
 
     pub async fn import_transactions(&self, transactions: Import) -> Result<String, FioError> {
-        match self.api_post("import/", transactions).await {
+        match self.api_post("import/", transactions.to_xml()).await {
             Ok(v) => {
                 Ok(v)
             }
