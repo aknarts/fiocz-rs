@@ -1,21 +1,27 @@
+//! Types for transaction
 use serde::{Deserialize, Serialize};
 
+/// Import transactions
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Import {
+    /// List of transaction orders
     pub orders: Vec<TransactionType>,
 }
 
 impl Import {
+    /// Create new import
     pub fn new() -> Self {
         Import { orders: vec![] }
     }
+    /// Create new import builder
     pub fn builder() -> ImportBuilder {
         ImportBuilder::new()
     }
 }
 
 impl Import {
+    /// Convert import to XML
     pub fn to_xml(&self) -> String {
         let mut result = Vec::new();
         result.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>".to_string());
@@ -152,6 +158,7 @@ impl Import {
     }
 }
 
+/// Import builder
 pub struct ImportBuilder {
     domestic: Vec<TransactionType>,
     euro: Vec<TransactionType>,
@@ -159,6 +166,7 @@ pub struct ImportBuilder {
 }
 
 impl ImportBuilder {
+    /// Create new import builder
     pub fn new() -> Self {
         return Self {
             domestic: vec![],
@@ -167,6 +175,7 @@ impl ImportBuilder {
         };
     }
 
+    /// Add domestic transaction
     pub fn domestic(&mut self, transaction: TransactionType) -> &mut ImportBuilder {
         if let TransactionType::DomesticTransaction { .. } = transaction {
             self.domestic.push(transaction);
@@ -174,6 +183,7 @@ impl ImportBuilder {
         self
     }
 
+    /// Add Euro transaction
     pub fn euro(&mut self, transaction: TransactionType) -> &mut ImportBuilder {
         if let TransactionType::T2Transaction { .. } = transaction {
             self.euro.push(transaction);
@@ -181,6 +191,7 @@ impl ImportBuilder {
         self
     }
 
+    /// Add foreign transaction
     pub fn foreign(&mut self, transaction: TransactionType) -> &mut ImportBuilder {
         if let TransactionType::ForeignTransaction { .. } = transaction {
             self.foreign.push(transaction);
@@ -188,6 +199,7 @@ impl ImportBuilder {
         self
     }
 
+    /// Build import
     pub fn build(&mut self) -> Import {
         let mut import = Import::new();
         for t in &self.domestic {
@@ -203,110 +215,146 @@ impl ImportBuilder {
     }
 }
 
+/// Transaction type
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum TransactionType {
+    /// Domestic transaction
     #[serde(rename_all = "camelCase")]
     DomesticTransaction {
+        /// Account from
         account_from: String,
+        /// Currency
         currency: String,
+        /// Amount
         amount: f64,
+        /// Account to
         account_to: String,
+        /// Bank code
         bank_code: String,
+        /// Constant symbol
         #[serde(skip_serializing_if = "Option::is_none")]
         ks: Option<String>,
+        /// Variable symbol
         #[serde(skip_serializing_if = "Option::is_none")]
         vs: Option<String>,
+        /// Specific symbol
         #[serde(skip_serializing_if = "Option::is_none")]
         ss: Option<String>,
+        /// Date of transaction
         date: String,
+        /// Message for recipient
         #[serde(skip_serializing_if = "Option::is_none")]
         message_for_recipient: Option<String>,
+        /// Comment
         #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<String>,
+        /// Payment reason
         #[serde(skip_serializing_if = "Option::is_none")]
         payment_reason: Option<String>,
+        /// Payment type
         #[serde(skip_serializing_if = "Option::is_none")]
         payment_type: Option<String>,
     },
+    /// Euro transaction
     #[serde(rename_all = "camelCase")]
     T2Transaction {
+        /// Account from
         account_from: String,
+        /// Currency
         currency: String,
+        /// Amount
         amount: f64,
+        /// Account to
         account_to: String,
+        /// BIC
         #[serde(skip_serializing_if = "Option::is_none")]
         bic: Option<String>,
+        /// Constant symbol
         #[serde(skip_serializing_if = "Option::is_none")]
         ks: Option<String>,
+        /// Variable symbol
         #[serde(skip_serializing_if = "Option::is_none")]
         vs: Option<String>,
+        /// Specific symbol
         #[serde(skip_serializing_if = "Option::is_none")]
         ss: Option<String>,
+        /// Date of transaction
         date: String,
+        /// Beneficiary name
         benef_name: String,
+        /// Beneficiary street
         #[serde(skip_serializing_if = "Option::is_none")]
         benef_street: Option<String>,
+        /// Beneficiary city
         #[serde(skip_serializing_if = "Option::is_none")]
         benef_city: Option<String>,
+        /// Beneficiary country
         #[serde(skip_serializing_if = "Option::is_none")]
         benef_country: Option<String>,
+        /// Remittance info 1
         #[serde(skip_serializing_if = "Option::is_none")]
         remittance_info1: Option<String>,
+        /// Remittance info 2
         #[serde(skip_serializing_if = "Option::is_none")]
         remittance_info2: Option<String>,
+        /// Remittance info 3
         #[serde(skip_serializing_if = "Option::is_none")]
         remittance_info3: Option<String>,
+        /// Comment
         #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<String>,
+        /// Payment reason
         #[serde(skip_serializing_if = "Option::is_none")]
         payment_reason: Option<String>,
+        /// Payment type
         #[serde(skip_serializing_if = "Option::is_none")]
         payment_type: Option<String>,
     },
+    /// Foreign transaction
     #[serde(rename_all = "camelCase")]
     ForeignTransaction {
+        /// Account from
         account_from: String,
+        /// Currency
         currency: String,
+        /// Amount
         amount: f64,
+        /// Account to
         account_to: String,
+        /// BIC
         #[serde(skip_serializing_if = "Option::is_none")]
         bic: Option<String>,
+        /// Date of transaction
         date: String,
+        /// Beneficiary name
         benef_name: String,
+        /// Beneficiary street
         #[serde(skip_serializing_if = "Option::is_none")]
         benef_street: Option<String>,
+        /// Beneficiary city
         #[serde(skip_serializing_if = "Option::is_none")]
         benef_city: Option<String>,
+        /// Beneficiary country
         #[serde(skip_serializing_if = "Option::is_none")]
         benef_country: Option<String>,
+        /// Remittance info 1
         #[serde(skip_serializing_if = "Option::is_none")]
         remittance_info1: Option<String>,
+        /// Remittance info 2
         #[serde(skip_serializing_if = "Option::is_none")]
         remittance_info2: Option<String>,
+        /// Remittance info 3
         #[serde(skip_serializing_if = "Option::is_none")]
         remittance_info3: Option<String>,
+        /// Remittance info 4
         #[serde(skip_serializing_if = "Option::is_none")]
         remittance_info4: Option<String>,
+        /// Comment
         #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<String>,
+        /// Payment reason
         payment_reason: String,
+        /// Details of charges
         details_of_charges: String,
-    },
-}
-
-#[derive(Serialize, )]
-pub struct Test {
-    pub val: Vec<TestEnum>,
-}
-
-#[derive(Serialize, )]
-pub enum TestEnum {
-    #[serde(rename_all = "camelCase")]
-    FirstEnum {
-        content: String
-    },
-    #[serde(rename_all = "camelCase")]
-    SecondEnum {
-        cont: String
     },
 }

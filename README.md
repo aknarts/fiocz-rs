@@ -2,10 +2,12 @@
 A minimal crate used to communicate with [Fio bank API](https://www.fio.cz/bankovni-sluzby/api-bankovnictvi).
 
 ## Functionality
-- [x] Get account movements
-- [x] Get account statements
-- [x] Import outgoing transaction commands
-- [X] Set last processed ID
-- [X] Set last processed date
+- [x] Get account movements in period
+- [x] Get account movements since last
+- [x] Get account statement
+- [x] Get last statement id
+- [x] Set last movement id
+- [x] Set last movement date
+- [x] Import transactions
 - | | Get merchant card transactions
 
