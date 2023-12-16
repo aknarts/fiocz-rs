@@ -2,6 +2,12 @@
 name = "fiocz-rs"
 version = "0.1.0"
 edition = "2021"
+description = "A Rust client for the FIO API"
+repository = "https://github.com/aknarts/fiocz-rs"
+license = "MIT"
+readme = "README.md"
+keywords = ["fio", "api", "client", "bank"]
+categories = ["finance", "api-bindings"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

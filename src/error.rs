@@ -3,7 +3,7 @@ use thiserror::Error;
 
 /// Error types
 #[derive(Error, Debug)]
-pub enum FioError {
+pub enum Error {
     /// Reqwest error
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
