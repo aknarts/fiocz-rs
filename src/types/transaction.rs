@@ -1,4 +1,5 @@
 //! Types for transaction
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 /// Import transactions
@@ -254,7 +255,7 @@ pub enum Type {
         /// Currency
         currency: String,
         /// Amount
-        amount: f64,
+        amount: Decimal,
         /// Account to
         account_to: String,
         /// Bank code
@@ -291,7 +292,7 @@ pub enum Type {
         /// Currency
         currency: String,
         /// Amount
-        amount: f64,
+        amount: Decimal,
         /// Account to
         account_to: String,
         /// BIC
@@ -346,7 +347,7 @@ pub enum Type {
         /// Currency
         currency: String,
         /// Amount
-        amount: f64,
+        amount: Decimal,
         /// Account to
         account_to: String,
         /// BIC

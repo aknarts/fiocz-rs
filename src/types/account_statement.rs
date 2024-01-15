@@ -1,5 +1,6 @@
 //! Account statement types
 use std::collections::HashMap;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -36,9 +37,9 @@ pub struct Info {
     /// BIC
     pub bic: String,
     /// Opening balance
-    pub opening_balance: f64,
+    pub opening_balance: Decimal,
     /// Closing balance
-    pub closing_balance: f64,
+    pub closing_balance: Decimal,
     /// Date start
     pub date_start: String,
     /// Date end
@@ -56,7 +57,7 @@ pub struct Info {
 }
 
 /// Transaction list
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionList {
     /// Transactions
@@ -64,7 +65,7 @@ pub struct TransactionList {
 }
 
 /// Transaction data
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
     /// Transaction Data Value
@@ -76,7 +77,7 @@ pub struct TransactionData {
 }
 
 /// Transaction data enum
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum TransactionDataEnum {
     /// Transaction data int value
@@ -84,5 +85,5 @@ pub enum TransactionDataEnum {
     /// Transaction data string value
     String(String),
     /// Transaction data float value
-    Float(f64),
+    Decimal(Decimal),
 }
