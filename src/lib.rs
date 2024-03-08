@@ -39,7 +39,7 @@ pub mod types;
 
 use reqwest::StatusCode;
 use serde::{de::DeserializeOwned};
-use log::{debug, error};
+use log::{debug, error, warn};
 use crate::error::Error;
 use crate::types::account_statement::Statement;
 use crate::types::transaction::Import;
@@ -80,7 +80,6 @@ impl Fio {
     async fn api_get_text(&self, rest_method: &str) -> Result<String, Error> {
         match reqwest::get(format!("https://www.fio.cz/ib_api/rest/{rest_method}")).await {
             Ok(resp) => {
-                println!("{:?}", resp.status());
                 if resp.status() == StatusCode::CONFLICT {
                     return Err(Error::Limit);
                 }
@@ -113,7 +112,6 @@ impl Fio {
         });
         match client.post(format!("https://www.fio.cz/ib_api/rest/{rest_method}")).multipart(form).send().await {
             Ok(resp) => {
-                println!("{:?}", resp.status());
                 if resp.status() == StatusCode::CONFLICT {
                     return Err(Error::Limit);
                 }
@@ -123,7 +121,6 @@ impl Fio {
                 if resp.status() == StatusCode::PAYLOAD_TOO_LARGE {
                     return Err(Error::TooLarge);
                 }
-                println!("Status: {}", resp.status());
                 match resp.text().await {
                     Ok(v) => {
                         Ok(v)
@@ -148,17 +145,17 @@ impl Fio {
 
     fn validate_date_string(date: &str) -> bool {
         if date.len() != 10 {
-            println!("Incorrect length");
+            error!("Incorrect length");
             return false;
         }
         for (index, c) in date.chars().enumerate() {
             if [0usize, 1usize, 2usize, 3usize, 5usize, 6usize, 8usize, 9usize].contains(&index) {
                 if !c.is_ascii_digit() {
-                    println!("{c} is not a digit on position {index}");
+                    warn!("{c} is not a digit on position {index}");
                     return false;
                 }
             } else if c != '-' {
-                println!("{c} is not a dash on position {index}");
+                warn!("{c} is not a dash on position {index}");
                 return false;
             }
         }
@@ -167,12 +164,12 @@ impl Fio {
 
     fn validate_year_string(year: &str) -> bool {
         if year.len() != 4 {
-            println!("Incorrect length");
+            error!("Incorrect length");
             return false;
         }
         for (index, c) in year.chars().enumerate() {
             if !c.is_ascii_digit() {
-                println!("{c} is not a digit on position {index}");
+                warn!("{c} is not a digit on position {index}");
                 return false;
             }
         }
