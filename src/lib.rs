@@ -78,7 +78,7 @@ impl Fio {
     }
 
     async fn api_get_text(&self, rest_method: &str) -> Result<String, Error> {
-        match reqwest::get(format!("https://www.fio.cz/ib_api/rest/{rest_method}")).await {
+        match reqwest::get(format!("https://fioapi.fio.cz/v1/rest/{rest_method}")).await {
             Ok(resp) => {
                 if resp.status() == StatusCode::CONFLICT {
                     return Err(Error::Limit);
@@ -110,7 +110,7 @@ impl Fio {
                 return Err(e.into());
             }
         });
-        match client.post(format!("https://www.fio.cz/ib_api/rest/{rest_method}")).multipart(form).send().await {
+        match client.post(format!("https://fioapi.fio.cz/v1/rest/{rest_method}")).multipart(form).send().await {
             Ok(resp) => {
                 if resp.status() == StatusCode::CONFLICT {
                     return Err(Error::Limit);

@@ -3,7 +3,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 /// Import transactions
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Import {
     /// List of transaction orders
@@ -245,7 +245,7 @@ impl Default for ImportBuilder {
 }
 
 /// Transaction type
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub enum Type {
     /// Domestic transaction
     #[serde(rename_all = "camelCase")]
