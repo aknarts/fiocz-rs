@@ -1,38 +1,68 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
-//! Fio API client
+//! Async Rust client for the [Fio banka API](https://www.fio.cz/bankovni-sluzby/api-bankovnictvi).
 //!
-//! # Example
+//! Provides typed access to account movements, statements, transaction imports,
+//! and merchant card data. Handles rate limiting (30s between requests),
+//! multipart file uploads, and multiple export formats.
+//!
+//! # Quick start
 //!
 //! ```no_run
 //! use fiocz_rs::Fio;
 //!
 //! #[tokio::main]
 //! async fn main() {
-//!     let fio = Fio::new("token");
+//!     let fio = Fio::new("your-api-token");
 //!
-//!    match fio.movements_since_last().await {
-//!       Ok(statement) => {
-//!           println!("Got newest movements containing {} transactions", statement.account_statement.transaction_list.transaction.len())
-//!      }
-//!      Err(e) => {
-//!          println!("Failed to get newest account movements: {:?}", e)
-//!      }
-//!  }
+//!     match fio.movements_in_period("2025-01-01", "2025-01-31").await {
+//!         Ok(statement) => {
+//!             let txns = &statement.account_statement.transaction_list.transaction;
+//!             println!("Got {} transactions", txns.len());
+//!         }
+//!         Err(e) => eprintln!("Error: {e:?}"),
+//!     }
 //! }
 //! ```
 //!
-//! # Current functionality
+//! # API methods
 //!
-//! * Get account movements in period (JSON or raw format)
-//! * Get account movements since last
-//! * Get account statement
-//! * Get last statement id
-//! * Set last movement id
-//! * Set last movement date
-//! * Import transactions (Fio XML)
-//! * Get merchant card transactions
+//! Each method has a JSON-parsed variant and a `_raw` variant that returns the
+//! response body as a [`String`] in any supported [`types::ExportFormat`].
+//!
+//! | Method | Description |
+//! |--------|-------------|
+//! | [`Fio::movements_in_period`] | Account movements for a date range |
+//! | [`Fio::movements_in_period_raw`] | Same, in any export format |
+//! | [`Fio::movements_since_last`] | Movements since last download |
+//! | [`Fio::movements_since_last_raw`] | Same, in any export format |
+//! | [`Fio::statements`] | Official statement by year/ID |
+//! | [`Fio::statements_raw`] | Same, in any export format (incl. PDF, MT940) |
+//! | [`Fio::last_statement_id`] | Last created statement number |
+//! | [`Fio::set_last_id`] | Set download bookmark by movement ID |
+//! | [`Fio::set_last_date`] | Set download bookmark by date |
+//! | [`Fio::import_transactions`] | Import payments via type-safe builder |
+//! | [`Fio::import_raw`] | Import via raw ABO/pain.001/pain.008 payload |
+//! | [`Fio::merchant_transactions_raw`] | POS/gateway card transactions (XML) |
+//!
+//! # Rate limiting
+//!
+//! The FIO API allows one request per 30 seconds per token. The client enforces
+//! this automatically — if you call an API method too soon, it sleeps until the
+//! interval has passed. The rate limiter is shared across clones of the same
+//! [`Fio`] instance via [`Arc`].
+//!
+//! # Error handling
+//!
+//! All methods return `Result<T, error::Error>`. HTTP status codes are mapped to
+//! typed variants:
+//!
+//! - 404 → [`error::Error::Token`] — invalid or deactivated token
+//! - 409 → [`error::Error::Limit`] — rate limit exceeded
+//! - 413 → [`error::Error::TooLarge`] — response too large
+//! - 422 → [`error::Error::HistoricalDataLocked`] — data older than 90 days
+//! - 500 → [`error::Error::Malformed`] — malformed request
 //!
 
 mod client;
