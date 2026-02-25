@@ -1,4 +1,4 @@
-//! Types for transaction import
+//! Types for transaction
 mod xml;
 
 use rust_decimal::Decimal;
@@ -336,6 +336,28 @@ mod tests {
         }
     }
 
+    fn sample_foreign() -> ForeignTransaction {
+        ForeignTransaction {
+            account_from: "CZ1234567890".to_string(),
+            currency: "USD".to_string(),
+            amount: Decimal::new(25000, 2),
+            account_to: "US12345678".to_string(),
+            bic: "ALFHPKKAXXX".to_string(),
+            date: "2024-03-15".to_string(),
+            benef_name: "Foreign Corp".to_string(),
+            benef_street: "Nishtar Rd 13".to_string(),
+            benef_city: "Karachi".to_string(),
+            benef_country: "PK".to_string(),
+            remittance_info1: "Payment for services".to_string(),
+            remittance_info2: None,
+            remittance_info3: None,
+            remittance_info4: None,
+            comment: None,
+            payment_reason: "110".to_string(),
+            details_of_charges: DetailsOfCharges::Shared,
+        }
+    }
+
     fn sample_euro() -> T2Transaction {
         T2Transaction {
             account_from: "CZ1234567890".to_string(),
@@ -357,28 +379,6 @@ mod tests {
             comment: None,
             payment_reason: None,
             payment_type: None,
-        }
-    }
-
-    fn sample_foreign() -> ForeignTransaction {
-        ForeignTransaction {
-            account_from: "CZ1234567890".to_string(),
-            currency: "USD".to_string(),
-            amount: Decimal::new(25000, 2),
-            account_to: "US12345678".to_string(),
-            bic: "ALFHPKKAXXX".to_string(),
-            date: "2024-03-15".to_string(),
-            benef_name: "Foreign Corp".to_string(),
-            benef_street: "Nishtar Rd 13".to_string(),
-            benef_city: "Karachi".to_string(),
-            benef_country: "PK".to_string(),
-            remittance_info1: "Payment for services".to_string(),
-            remittance_info2: None,
-            remittance_info3: None,
-            remittance_info4: None,
-            comment: None,
-            payment_reason: "110".to_string(),
-            details_of_charges: DetailsOfCharges::Shared,
         }
     }
 

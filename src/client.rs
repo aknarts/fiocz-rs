@@ -49,11 +49,16 @@ impl Fio {
         }
     }
 
-    pub(crate) async fn api_post(&self, rest_method: &str, body: String) -> Result<String, Error> {
+    pub(crate) async fn api_post(
+        &self,
+        rest_method: &str,
+        import_type: &str,
+        body: String,
+    ) -> Result<String, Error> {
         let client = reqwest::Client::new();
         let form = reqwest::multipart::Form::new()
             .text("token", self.token.clone())
-            .text("type", "xml")
+            .text("type", import_type.to_string())
             .part(
                 "file",
                 match reqwest::multipart::Part::text(body)
