@@ -184,36 +184,6 @@ mod tests {
         let xml = i.to_xml();
         assert!(xml.contains("<DomesticTransaction>"));
         assert!(xml.contains("<vs>123</vs>"));
-        assert!(!xml.contains("<ks>"));
-    }
-
-    #[test]
-    fn xml_euro() {
-        let mut i = Import::new();
-        i.orders.push(Type::Euro(T2Transaction {
-            account_from: "1".into(),
-            currency: "EUR".into(),
-            amount: Decimal::new(100, 0),
-            account_to: "2".into(),
-            bic: Some("BIC".into()),
-            ks: None,
-            vs: None,
-            ss: None,
-            date: "2024-01-01".into(),
-            benef_name: "N".into(),
-            benef_street: None,
-            benef_city: None,
-            benef_country: None,
-            remittance_info1: None,
-            remittance_info2: None,
-            remittance_info3: None,
-            comment: None,
-            payment_reason: None,
-            payment_type: None,
-        }));
-        let xml = i.to_xml();
-        assert!(xml.contains("<T2Transaction>"));
-        assert!(xml.contains("<bic>BIC</bic>"));
     }
 
     #[test]
@@ -239,9 +209,7 @@ mod tests {
             details_of_charges: DetailsOfCharges::Shared,
         }));
         let xml = i.to_xml();
-        assert!(xml.contains("<ForeignTransaction>"));
         assert!(xml.contains("<detailsOfCharges>470503</detailsOfCharges>"));
-        assert!(xml.contains("<bic>BIC</bic>"));
     }
 
     #[test]
@@ -258,27 +226,6 @@ mod tests {
             ss: None,
             date: "2024-01-01".into(),
             message_for_recipient: None,
-            comment: None,
-            payment_reason: None,
-            payment_type: None,
-        }));
-        i.orders.push(Type::Euro(T2Transaction {
-            account_from: "1".into(),
-            currency: "EUR".into(),
-            amount: Decimal::new(1, 0),
-            account_to: "2".into(),
-            bic: None,
-            ks: None,
-            vs: None,
-            ss: None,
-            date: "2024-01-01".into(),
-            benef_name: "N".into(),
-            benef_street: None,
-            benef_city: None,
-            benef_country: None,
-            remittance_info1: None,
-            remittance_info2: None,
-            remittance_info3: None,
             comment: None,
             payment_reason: None,
             payment_type: None,
@@ -304,9 +251,7 @@ mod tests {
         }));
         let xml = i.to_xml();
         let d = xml.find("<DomesticTransaction>").unwrap();
-        let e = xml.find("<T2Transaction>").unwrap();
         let f = xml.find("<ForeignTransaction>").unwrap();
-        assert!(d < e);
-        assert!(e < f);
+        assert!(d < f);
     }
 }

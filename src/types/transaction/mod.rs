@@ -312,3 +312,90 @@ impl Default for ImportBuilder {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rust_decimal::Decimal;
+
+    fn sample_foreign() -> ForeignTransaction {
+        ForeignTransaction {
+            account_from: "CZ123".to_string(),
+            currency: "USD".to_string(),
+            amount: Decimal::new(25000, 2),
+            account_to: "US456".to_string(),
+            bic: "ALFHPKKAXXX".to_string(),
+            date: "2024-03-15".to_string(),
+            benef_name: "Corp".to_string(),
+            benef_street: "St 13".to_string(),
+            benef_city: "Karachi".to_string(),
+            benef_country: "PK".to_string(),
+            remittance_info1: "Payment".to_string(),
+            remittance_info2: None,
+            remittance_info3: None,
+            remittance_info4: None,
+            comment: None,
+            payment_reason: "110".to_string(),
+            details_of_charges: DetailsOfCharges::Shared,
+        }
+    }
+
+    #[test]
+    fn builder_empty() {
+        assert!(ImportBuilder::new().build().orders.is_empty());
+    }
+
+    #[test]
+    fn builder_domestic() {
+        let t = DomesticTransaction {
+            account_from: "1".into(),
+            currency: "CZK".into(),
+            amount: Decimal::new(100, 0),
+            account_to: "2".into(),
+            bank_code: "0800".into(),
+            ks: None,
+            vs: None,
+            ss: None,
+            date: "2024-01-01".into(),
+            message_for_recipient: None,
+            comment: None,
+            payment_reason: None,
+            payment_type: None,
+        };
+        let import = ImportBuilder::new().domestic(t).build();
+        assert_eq!(import.orders.len(), 1);
+    }
+
+    #[test]
+    fn builder_foreign() {
+        let import = ImportBuilder::new().foreign(sample_foreign()).build();
+        assert_eq!(import.orders.len(), 1);
+        assert!(matches!(import.orders[0], Type::Foreign(_)));
+    }
+
+    #[test]
+    fn builder_default_empty() {
+        assert!(Import::default().orders.is_empty());
+    }
+
+    #[test]
+    fn details_of_charges_display() {
+        assert_eq!(DetailsOfCharges::Sender.to_string(), "470501");
+        assert_eq!(DetailsOfCharges::Receiver.to_string(), "470502");
+        assert_eq!(DetailsOfCharges::Shared.to_string(), "470503");
+    }
+
+    #[test]
+    fn domestic_payment_type_display() {
+        assert_eq!(DomesticPaymentType::Standard.to_string(), "431001");
+        assert_eq!(DomesticPaymentType::Priority.to_string(), "431005");
+        assert_eq!(DomesticPaymentType::DirectDebit.to_string(), "431022");
+    }
+
+    #[test]
+    fn euro_payment_type_display() {
+        assert_eq!(EuroPaymentType::Standard.to_string(), "431008");
+        assert_eq!(EuroPaymentType::Priority.to_string(), "431009");
+        assert_eq!(EuroPaymentType::Instant.to_string(), "431018");
+    }
+}
