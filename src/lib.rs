@@ -40,15 +40,25 @@ pub mod error;
 pub mod types;
 mod validation;
 
+use std::sync::Arc;
+use std::time::Instant;
+use tokio::sync::Mutex;
+
 use crate::error::Error;
 use crate::types::account_statement::{LastStatementId, Statement};
 use crate::types::transaction::Import;
 use crate::types::ExportFormat;
 
+/// Minimum interval between API requests (30 seconds per FIO API docs)
+const MIN_REQUEST_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
+
 /// Fiocz API client
+///
+/// Enforces the FIO API rate limit of one request per 30 seconds per token.
 #[derive(Clone)]
 pub struct Fio {
     token: String,
+    last_request: Arc<Mutex<Option<Instant>>>,
 }
 
 impl Fio {
@@ -59,6 +69,7 @@ impl Fio {
     pub fn new(token: &str) -> Self {
         Self {
             token: token.to_string(),
+            last_request: Arc::new(Mutex::new(None)),
         }
     }
 

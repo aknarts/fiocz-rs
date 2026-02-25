@@ -1,9 +1,11 @@
-use log::{debug, error};
+use log::{debug, error, warn};
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
+use std::time::Instant;
 
 use crate::error::Error;
 use crate::Fio;
+use crate::MIN_REQUEST_INTERVAL;
 
 fn map_status_error(status: StatusCode) -> Option<Error> {
     match status {
@@ -17,6 +19,22 @@ fn map_status_error(status: StatusCode) -> Option<Error> {
 }
 
 impl Fio {
+    async fn enforce_rate_limit(&self) {
+        let mut last = self.last_request.lock().await;
+        if let Some(prev) = *last {
+            let elapsed = prev.elapsed();
+            if elapsed < MIN_REQUEST_INTERVAL {
+                let delay = MIN_REQUEST_INTERVAL - elapsed;
+                warn!(
+                    "Rate limit: waiting {}s before next request",
+                    delay.as_secs()
+                );
+                tokio::time::sleep(delay).await;
+            }
+        }
+        *last = Some(Instant::now());
+    }
+
     pub(crate) async fn api_get<T: DeserializeOwned>(&self, rest_method: &str) -> Result<T, Error> {
         match self.api_get_text(rest_method).await {
             Ok(v) => {
@@ -35,6 +53,7 @@ impl Fio {
     }
 
     pub(crate) async fn api_get_text(&self, rest_method: &str) -> Result<String, Error> {
+        self.enforce_rate_limit().await;
         match reqwest::get(format!("https://fioapi.fio.cz/v1/rest/{rest_method}")).await {
             Ok(resp) => {
                 if let Some(e) = map_status_error(resp.status()) {
@@ -55,6 +74,7 @@ impl Fio {
         import_type: &str,
         body: String,
     ) -> Result<String, Error> {
+        self.enforce_rate_limit().await;
         let client = reqwest::Client::new();
         let form = reqwest::multipart::Form::new()
             .text("token", self.token.clone())
