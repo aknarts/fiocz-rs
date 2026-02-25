@@ -35,9 +35,9 @@
 //!
 
 mod client;
+mod validation;
 pub mod error;
 pub mod types;
-mod validation;
 
 use crate::error::Error;
 use crate::types::account_statement::{LastStatementId, Statement};

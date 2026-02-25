@@ -244,3 +244,119 @@ impl Default for ImportBuilder {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rust_decimal::Decimal;
+
+    fn sample_domestic() -> DomesticTransaction {
+        DomesticTransaction {
+            account_from: "2345678901".to_string(),
+            currency: "CZK".to_string(),
+            amount: Decimal::new(10050, 2),
+            account_to: "1234567890".to_string(),
+            bank_code: "0800".to_string(),
+            ks: None,
+            vs: Some("1234567890".to_string()),
+            ss: None,
+            date: "2024-01-15".to_string(),
+            message_for_recipient: Some("Test payment".to_string()),
+            comment: None,
+            payment_reason: None,
+            payment_type: None,
+        }
+    }
+
+    fn sample_euro() -> T2Transaction {
+        T2Transaction {
+            account_from: "CZ1234567890".to_string(),
+            currency: "EUR".to_string(),
+            amount: Decimal::new(5000, 2),
+            account_to: "DE89370400440532013000".to_string(),
+            bic: Some("COBADEFFXXX".to_string()),
+            ks: None,
+            vs: None,
+            ss: None,
+            date: "2024-02-01".to_string(),
+            benef_name: "Test Recipient".to_string(),
+            benef_street: None,
+            benef_city: None,
+            benef_country: None,
+            remittance_info1: Some("Invoice 123".to_string()),
+            remittance_info2: None,
+            remittance_info3: None,
+            comment: None,
+            payment_reason: None,
+            payment_type: None,
+        }
+    }
+
+    fn sample_foreign() -> ForeignTransaction {
+        ForeignTransaction {
+            account_from: "CZ1234567890".to_string(),
+            currency: "USD".to_string(),
+            amount: Decimal::new(25000, 2),
+            account_to: "US12345678".to_string(),
+            bic: None,
+            date: "2024-03-15".to_string(),
+            benef_name: "Foreign Corp".to_string(),
+            benef_street: None,
+            benef_city: None,
+            benef_country: Some("US".to_string()),
+            remittance_info1: None,
+            remittance_info2: None,
+            remittance_info3: None,
+            remittance_info4: None,
+            comment: None,
+            payment_reason: "110".to_string(),
+            details_of_charges: "SHA".to_string(),
+        }
+    }
+
+    #[test]
+    fn builder_empty_produces_no_orders() {
+        let import = ImportBuilder::new().build();
+        assert!(import.orders.is_empty());
+    }
+
+    #[test]
+    fn builder_domestic_adds_transaction() {
+        let import = ImportBuilder::new().domestic(sample_domestic()).build();
+        assert_eq!(import.orders.len(), 1);
+        assert!(matches!(import.orders[0], Type::Domestic(_)));
+    }
+
+    #[test]
+    fn builder_euro_adds_transaction() {
+        let import = ImportBuilder::new().euro(sample_euro()).build();
+        assert_eq!(import.orders.len(), 1);
+        assert!(matches!(import.orders[0], Type::Euro(_)));
+    }
+
+    #[test]
+    fn builder_foreign_adds_transaction() {
+        let import = ImportBuilder::new().foreign(sample_foreign()).build();
+        assert_eq!(import.orders.len(), 1);
+        assert!(matches!(import.orders[0], Type::Foreign(_)));
+    }
+
+    #[test]
+    fn builder_chaining_all_types() {
+        let import = ImportBuilder::new()
+            .domestic(sample_domestic())
+            .euro(sample_euro())
+            .foreign(sample_foreign())
+            .build();
+        assert_eq!(import.orders.len(), 3);
+        assert!(matches!(import.orders[0], Type::Domestic(_)));
+        assert!(matches!(import.orders[1], Type::Euro(_)));
+        assert!(matches!(import.orders[2], Type::Foreign(_)));
+    }
+
+    #[test]
+    fn import_default_is_empty() {
+        let import = Import::default();
+        assert!(import.orders.is_empty());
+    }
+}

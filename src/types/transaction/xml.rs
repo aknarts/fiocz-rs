@@ -172,3 +172,190 @@ fn convert_domestic(result: &mut Vec<String>, t: &DomesticTransaction) {
     }
     result.push("</DomesticTransaction>".to_string());
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rust_decimal::Decimal;
+
+    fn sample_domestic() -> DomesticTransaction {
+        DomesticTransaction {
+            account_from: "2345678901".to_string(),
+            currency: "CZK".to_string(),
+            amount: Decimal::new(10050, 2),
+            account_to: "1234567890".to_string(),
+            bank_code: "0800".to_string(),
+            ks: None,
+            vs: Some("1234567890".to_string()),
+            ss: None,
+            date: "2024-01-15".to_string(),
+            message_for_recipient: Some("Test payment".to_string()),
+            comment: None,
+            payment_reason: None,
+            payment_type: None,
+        }
+    }
+
+    #[test]
+    fn xml_empty_import() {
+        let import = Import::new();
+        let xml = import.to_xml();
+        assert!(xml.starts_with("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+        assert!(xml.contains("<Orders></Orders>"));
+        assert!(xml.ends_with("</Import>"));
+    }
+
+    #[test]
+    fn xml_domestic_required_fields() {
+        let mut import = Import::new();
+        import.orders.push(Type::Domestic(DomesticTransaction {
+            account_from: "111".to_string(),
+            currency: "CZK".to_string(),
+            amount: Decimal::new(500, 0),
+            account_to: "222".to_string(),
+            bank_code: "0800".to_string(),
+            ks: None,
+            vs: None,
+            ss: None,
+            date: "2024-01-01".to_string(),
+            message_for_recipient: None,
+            comment: None,
+            payment_reason: None,
+            payment_type: None,
+        }));
+        let xml = import.to_xml();
+        assert!(xml.contains("<DomesticTransaction>"));
+        assert!(xml.contains("<accountFrom>111</accountFrom>"));
+        assert!(xml.contains("<bankCode>0800</bankCode>"));
+        assert!(xml.contains("<amount>500</amount>"));
+        assert!(xml.contains("</DomesticTransaction>"));
+        // Optional fields should NOT appear
+        assert!(!xml.contains("<ks>"));
+        assert!(!xml.contains("<vs>"));
+        assert!(!xml.contains("<comment>"));
+    }
+
+    #[test]
+    fn xml_domestic_with_optional_fields() {
+        let mut import = Import::new();
+        import.orders.push(Type::Domestic(sample_domestic()));
+        let xml = import.to_xml();
+        assert!(xml.contains("<vs>1234567890</vs>"));
+        assert!(xml.contains("<messageForRecipient>Test payment</messageForRecipient>"));
+        assert!(!xml.contains("<ks>"));
+    }
+
+    #[test]
+    fn xml_euro_transaction() {
+        let mut import = Import::new();
+        import.orders.push(Type::Euro(T2Transaction {
+            account_from: "CZ111".to_string(),
+            currency: "EUR".to_string(),
+            amount: Decimal::new(5000, 2),
+            account_to: "DE222".to_string(),
+            bic: Some("COBADEFF".to_string()),
+            ks: None,
+            vs: None,
+            ss: None,
+            date: "2024-02-01".to_string(),
+            benef_name: "Test".to_string(),
+            benef_street: None,
+            benef_city: None,
+            benef_country: None,
+            remittance_info1: None,
+            remittance_info2: None,
+            remittance_info3: None,
+            comment: None,
+            payment_reason: None,
+            payment_type: None,
+        }));
+        let xml = import.to_xml();
+        assert!(xml.contains("<T2Transaction>"));
+        assert!(xml.contains("<bic>COBADEFF</bic>"));
+        assert!(xml.contains("<benefName>Test</benefName>"));
+        assert!(xml.contains("</T2Transaction>"));
+    }
+
+    #[test]
+    fn xml_foreign_transaction() {
+        let mut import = Import::new();
+        import.orders.push(Type::Foreign(ForeignTransaction {
+            account_from: "CZ111".to_string(),
+            currency: "USD".to_string(),
+            amount: Decimal::new(25000, 2),
+            account_to: "US222".to_string(),
+            bic: None,
+            date: "2024-03-15".to_string(),
+            benef_name: "Foreign Corp".to_string(),
+            benef_street: None,
+            benef_city: None,
+            benef_country: Some("US".to_string()),
+            remittance_info1: None,
+            remittance_info2: None,
+            remittance_info3: None,
+            remittance_info4: None,
+            comment: None,
+            payment_reason: "110".to_string(),
+            details_of_charges: "SHA".to_string(),
+        }));
+        let xml = import.to_xml();
+        assert!(xml.contains("<ForeignTransaction>"));
+        assert!(xml.contains("<benefCountry>US</benefCountry>"));
+        assert!(xml.contains("<paymentReason>110</paymentReason>"));
+        assert!(xml.contains("<detailsOfCharges>SHA</detailsOfCharges>"));
+        assert!(xml.contains("</ForeignTransaction>"));
+        assert!(!xml.contains("<bic>"));
+    }
+
+    #[test]
+    fn xml_mixed_ordering() {
+        let mut import = Import::new();
+        import.orders.push(Type::Domestic(sample_domestic()));
+        import.orders.push(Type::Euro(T2Transaction {
+            account_from: "CZ111".to_string(),
+            currency: "EUR".to_string(),
+            amount: Decimal::new(100, 0),
+            account_to: "DE222".to_string(),
+            bic: None,
+            ks: None,
+            vs: None,
+            ss: None,
+            date: "2024-02-01".to_string(),
+            benef_name: "Euro Recv".to_string(),
+            benef_street: None,
+            benef_city: None,
+            benef_country: None,
+            remittance_info1: None,
+            remittance_info2: None,
+            remittance_info3: None,
+            comment: None,
+            payment_reason: None,
+            payment_type: None,
+        }));
+        import.orders.push(Type::Foreign(ForeignTransaction {
+            account_from: "CZ111".to_string(),
+            currency: "USD".to_string(),
+            amount: Decimal::new(200, 0),
+            account_to: "US333".to_string(),
+            bic: None,
+            date: "2024-03-01".to_string(),
+            benef_name: "USD Recv".to_string(),
+            benef_street: None,
+            benef_city: None,
+            benef_country: None,
+            remittance_info1: None,
+            remittance_info2: None,
+            remittance_info3: None,
+            remittance_info4: None,
+            comment: None,
+            payment_reason: "110".to_string(),
+            details_of_charges: "SHA".to_string(),
+        }));
+        let xml = import.to_xml();
+        let domestic_pos = xml.find("<DomesticTransaction>");
+        let euro_pos = xml.find("<T2Transaction>");
+        let foreign_pos = xml.find("<ForeignTransaction>");
+        assert!(domestic_pos < euro_pos);
+        assert!(euro_pos < foreign_pos);
+    }
+}
