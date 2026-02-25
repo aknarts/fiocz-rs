@@ -1,8 +1,8 @@
 //! Account statement types
-use std::collections::HashMap;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 
 /// Holder for account statement
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -86,4 +86,88 @@ pub enum TransactionDataEnum {
     String(String),
     /// Transaction data float value
     Decimal(Decimal),
+}
+
+/// Last statement identifier
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct LastStatementId {
+    /// Year of the statement
+    pub year: String,
+    /// Statement ID
+    pub id: String,
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rust_decimal::Decimal;
+
+    #[test]
+    fn transaction_data_enum_deserialize_integer() {
+        let json = "42";
+        let result: Result<TransactionDataEnum, _> = serde_json::from_str(json);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), TransactionDataEnum::Integer(42));
+    }
+
+    #[test]
+    fn transaction_data_enum_deserialize_string() {
+        let json = "\"hello\"";
+        let result: Result<TransactionDataEnum, _> = serde_json::from_str(json);
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            TransactionDataEnum::String("hello".to_string())
+        );
+    }
+
+    #[test]
+    fn transaction_data_enum_deserialize_decimal() {
+        let json = "123.45";
+        let result: Result<TransactionDataEnum, _> = serde_json::from_str(json);
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            TransactionDataEnum::Decimal(Decimal::new(12345, 2))
+        );
+    }
+
+    #[test]
+    fn last_statement_id_creation() {
+        let id = LastStatementId {
+            year: "2024".to_string(),
+            id: "01".to_string(),
+        };
+        assert_eq!(id.year, "2024");
+        assert_eq!(id.id, "01");
+    }
+
+    #[test]
+    fn last_statement_id_clone_eq() {
+        let id1 = LastStatementId {
+            year: "2024".to_string(),
+            id: "01".to_string(),
+        };
+        let id2 = id1.clone();
+        assert_eq!(id1, id2);
+    }
+
+    #[test]
+    fn transaction_data_enum_round_trip_integer() {
+        let original = TransactionDataEnum::Integer(99);
+        let json = serde_json::to_string(&original);
+        assert!(json.is_ok());
+        let deserialized: Result<TransactionDataEnum, _> = serde_json::from_str(&json.unwrap());
+        assert!(deserialized.is_ok());
+        assert_eq!(deserialized.unwrap(), original);
+    }
+
+    #[test]
+    fn transaction_data_enum_round_trip_string() {
+        let original = TransactionDataEnum::String("test value".to_string());
+        let json = serde_json::to_string(&original);
+        assert!(json.is_ok());
+        let deserialized: Result<TransactionDataEnum, _> = serde_json::from_str(&json.unwrap());
+        assert!(deserialized.is_ok());
+        assert_eq!(deserialized.unwrap(), original);
+    }
 }
