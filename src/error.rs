@@ -31,4 +31,7 @@ pub enum Error {
     /// Missing body
     #[error("Missing body")]
     MissingBody,
+    /// Historical data access requires strong authorization (data older than 90 days)
+    #[error("Historical data access requires strong authorization (data older than 90 days)")]
+    HistoricalDataLocked,
 }

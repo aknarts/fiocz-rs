@@ -10,6 +10,8 @@ fn map_status_error(status: StatusCode) -> Option<Error> {
         StatusCode::CONFLICT => Some(Error::Limit),
         StatusCode::INTERNAL_SERVER_ERROR => Some(Error::Malformed),
         StatusCode::PAYLOAD_TOO_LARGE => Some(Error::TooLarge),
+        StatusCode::NOT_FOUND => Some(Error::Token),
+        StatusCode::UNPROCESSABLE_ENTITY => Some(Error::HistoricalDataLocked),
         _ => None,
     }
 }
