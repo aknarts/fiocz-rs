@@ -32,4 +32,3 @@ pub enum Error {
     #[error("Missing body")]
     MissingBody,
 }
-
