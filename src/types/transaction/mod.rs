@@ -1,8 +1,81 @@
-//! Types for transaction
+//! Types for transaction import
 mod xml;
 
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::fmt;
+
+/// Details of charges for foreign transactions
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+pub enum DetailsOfCharges {
+    /// All charges paid by sender (OUR) - code 470501
+    #[serde(rename = "470501")]
+    Sender,
+    /// All charges paid by receiver (BEN) - code 470502
+    #[serde(rename = "470502")]
+    Receiver,
+    /// Each party pays own charges (SHA) - code 470503
+    #[serde(rename = "470503")]
+    Shared,
+}
+
+impl fmt::Display for DetailsOfCharges {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Sender => write!(f, "470501"),
+            Self::Receiver => write!(f, "470502"),
+            Self::Shared => write!(f, "470503"),
+        }
+    }
+}
+
+/// Payment type for domestic transactions
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+pub enum DomesticPaymentType {
+    /// Standard payment - code 431001
+    #[serde(rename = "431001")]
+    Standard,
+    /// Priority payment - code 431005
+    #[serde(rename = "431005")]
+    Priority,
+    /// Direct debit order - code 431022
+    #[serde(rename = "431022")]
+    DirectDebit,
+}
+
+impl fmt::Display for DomesticPaymentType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Standard => write!(f, "431001"),
+            Self::Priority => write!(f, "431005"),
+            Self::DirectDebit => write!(f, "431022"),
+        }
+    }
+}
+
+/// Payment type for euro (T2) transactions
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+pub enum EuroPaymentType {
+    /// Standard payment - code 431008
+    #[serde(rename = "431008")]
+    Standard,
+    /// Priority payment - code 431009
+    #[serde(rename = "431009")]
+    Priority,
+    /// Instant payment - code 431018
+    #[serde(rename = "431018")]
+    Instant,
+}
+
+impl fmt::Display for EuroPaymentType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Standard => write!(f, "431008"),
+            Self::Priority => write!(f, "431009"),
+            Self::Instant => write!(f, "431018"),
+        }
+    }
+}
 
 /// Domestic transaction data
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
@@ -40,7 +113,7 @@ pub struct DomesticTransaction {
     pub payment_reason: Option<String>,
     /// Payment type
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub payment_type: Option<String>,
+    pub payment_type: Option<DomesticPaymentType>,
 }
 
 /// Euro (T2) transaction data
@@ -97,7 +170,7 @@ pub struct T2Transaction {
     pub payment_reason: Option<String>,
     /// Payment type
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub payment_type: Option<String>,
+    pub payment_type: Option<EuroPaymentType>,
 }
 
 /// Foreign transaction data
@@ -112,25 +185,20 @@ pub struct ForeignTransaction {
     pub amount: Decimal,
     /// Account to
     pub account_to: String,
-    /// BIC
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bic: Option<String>,
+    /// BIC (mandatory for foreign transactions)
+    pub bic: String,
     /// Date of transaction
     pub date: String,
     /// Beneficiary name
     pub benef_name: String,
-    /// Beneficiary street
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub benef_street: Option<String>,
-    /// Beneficiary city
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub benef_city: Option<String>,
-    /// Beneficiary country
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub benef_country: Option<String>,
-    /// Remittance info 1
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remittance_info1: Option<String>,
+    /// Beneficiary street (mandatory for foreign transactions)
+    pub benef_street: String,
+    /// Beneficiary city (mandatory for foreign transactions)
+    pub benef_city: String,
+    /// Beneficiary country (mandatory for foreign transactions)
+    pub benef_country: String,
+    /// Remittance info 1 (mandatory for foreign transactions)
+    pub remittance_info1: String,
     /// Remittance info 2
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remittance_info2: Option<String>,
@@ -146,7 +214,7 @@ pub struct ForeignTransaction {
     /// Payment reason
     pub payment_reason: String,
     /// Details of charges
-    pub details_of_charges: String,
+    pub details_of_charges: DetailsOfCharges,
 }
 
 /// Transaction type
@@ -226,14 +294,14 @@ impl ImportBuilder {
     /// Build import
     pub fn build(&mut self) -> Import {
         let mut import = Import::new();
-        for t in &self.domestic {
-            import.orders.push(Type::Domestic(t.clone()));
+        for t in self.domestic.drain(..) {
+            import.orders.push(Type::Domestic(t));
         }
-        for t in &self.euro {
-            import.orders.push(Type::Euro(t.clone()));
+        for t in self.euro.drain(..) {
+            import.orders.push(Type::Euro(t));
         }
-        for t in &self.foreign {
-            import.orders.push(Type::Foreign(t.clone()));
+        for t in self.foreign.drain(..) {
+            import.orders.push(Type::Foreign(t));
         }
         import
     }
@@ -298,19 +366,19 @@ mod tests {
             currency: "USD".to_string(),
             amount: Decimal::new(25000, 2),
             account_to: "US12345678".to_string(),
-            bic: None,
+            bic: "ALFHPKKAXXX".to_string(),
             date: "2024-03-15".to_string(),
             benef_name: "Foreign Corp".to_string(),
-            benef_street: None,
-            benef_city: None,
-            benef_country: Some("US".to_string()),
-            remittance_info1: None,
+            benef_street: "Nishtar Rd 13".to_string(),
+            benef_city: "Karachi".to_string(),
+            benef_country: "PK".to_string(),
+            remittance_info1: "Payment for services".to_string(),
             remittance_info2: None,
             remittance_info3: None,
             remittance_info4: None,
             comment: None,
             payment_reason: "110".to_string(),
-            details_of_charges: "SHA".to_string(),
+            details_of_charges: DetailsOfCharges::Shared,
         }
     }
 
@@ -358,5 +426,26 @@ mod tests {
     fn import_default_is_empty() {
         let import = Import::default();
         assert!(import.orders.is_empty());
+    }
+
+    #[test]
+    fn details_of_charges_display() {
+        assert_eq!(DetailsOfCharges::Sender.to_string(), "470501");
+        assert_eq!(DetailsOfCharges::Receiver.to_string(), "470502");
+        assert_eq!(DetailsOfCharges::Shared.to_string(), "470503");
+    }
+
+    #[test]
+    fn domestic_payment_type_display() {
+        assert_eq!(DomesticPaymentType::Standard.to_string(), "431001");
+        assert_eq!(DomesticPaymentType::Priority.to_string(), "431005");
+        assert_eq!(DomesticPaymentType::DirectDebit.to_string(), "431022");
+    }
+
+    #[test]
+    fn euro_payment_type_display() {
+        assert_eq!(EuroPaymentType::Standard.to_string(), "431008");
+        assert_eq!(EuroPaymentType::Priority.to_string(), "431009");
+        assert_eq!(EuroPaymentType::Instant.to_string(), "431018");
     }
 }

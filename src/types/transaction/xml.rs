@@ -1,3 +1,5 @@
+//! XML generation for transaction import
+
 use super::{DomesticTransaction, ForeignTransaction, Import, T2Transaction, Type};
 
 impl Import {
@@ -35,25 +37,16 @@ fn convert_foreign(result: &mut Vec<String>, t: &ForeignTransaction) {
     result.push(format!("<currency>{}</currency>", t.currency));
     result.push(format!("<amount>{}</amount>", t.amount));
     result.push(format!("<accountTo>{}</accountTo>", t.account_to));
-    if let Some(bic) = &t.bic {
-        result.push(format!("<bic>{bic}</bic>"));
-    }
+    result.push(format!("<bic>{}</bic>", t.bic));
     result.push(format!("<date>{}</date>", t.date));
     result.push(format!("<benefName>{}</benefName>", t.benef_name));
-    if let Some(benef_street) = &t.benef_street {
-        result.push(format!("<benefStreet>{benef_street}</benefStreet>"));
-    }
-    if let Some(benef_city) = &t.benef_city {
-        result.push(format!("<benefCity>{benef_city}</benefCity>"));
-    }
-    if let Some(benef_country) = &t.benef_country {
-        result.push(format!("<benefCountry>{benef_country}</benefCountry>"));
-    }
-    if let Some(remittance_info1) = &t.remittance_info1 {
-        result.push(format!(
-            "<remittanceInfo1>{remittance_info1}</remittanceInfo1>"
-        ));
-    }
+    result.push(format!("<benefStreet>{}</benefStreet>", t.benef_street));
+    result.push(format!("<benefCity>{}</benefCity>", t.benef_city));
+    result.push(format!("<benefCountry>{}</benefCountry>", t.benef_country));
+    result.push(format!(
+        "<remittanceInfo1>{}</remittanceInfo1>",
+        t.remittance_info1
+    ));
     if let Some(remittance_info2) = &t.remittance_info2 {
         result.push(format!(
             "<remittanceInfo2>{remittance_info2}</remittanceInfo2>"
@@ -175,6 +168,7 @@ fn convert_domestic(result: &mut Vec<String>, t: &DomesticTransaction) {
 
 #[cfg(test)]
 mod tests {
+    use super::super::*;
     use super::*;
     use rust_decimal::Decimal;
 
@@ -229,7 +223,6 @@ mod tests {
         assert!(xml.contains("<bankCode>0800</bankCode>"));
         assert!(xml.contains("<amount>500</amount>"));
         assert!(xml.contains("</DomesticTransaction>"));
-        // Optional fields should NOT appear
         assert!(!xml.contains("<ks>"));
         assert!(!xml.contains("<vs>"));
         assert!(!xml.contains("<comment>"));
@@ -284,27 +277,29 @@ mod tests {
             currency: "USD".to_string(),
             amount: Decimal::new(25000, 2),
             account_to: "US222".to_string(),
-            bic: None,
+            bic: "ALFHPKKAXXX".to_string(),
             date: "2024-03-15".to_string(),
             benef_name: "Foreign Corp".to_string(),
-            benef_street: None,
-            benef_city: None,
-            benef_country: Some("US".to_string()),
-            remittance_info1: None,
+            benef_street: "Main St 1".to_string(),
+            benef_city: "New York".to_string(),
+            benef_country: "US".to_string(),
+            remittance_info1: "Payment 001".to_string(),
             remittance_info2: None,
             remittance_info3: None,
             remittance_info4: None,
             comment: None,
             payment_reason: "110".to_string(),
-            details_of_charges: "SHA".to_string(),
+            details_of_charges: DetailsOfCharges::Shared,
         }));
         let xml = import.to_xml();
         assert!(xml.contains("<ForeignTransaction>"));
+        assert!(xml.contains("<bic>ALFHPKKAXXX</bic>"));
         assert!(xml.contains("<benefCountry>US</benefCountry>"));
+        assert!(xml.contains("<benefStreet>Main St 1</benefStreet>"));
+        assert!(xml.contains("<remittanceInfo1>Payment 001</remittanceInfo1>"));
         assert!(xml.contains("<paymentReason>110</paymentReason>"));
-        assert!(xml.contains("<detailsOfCharges>SHA</detailsOfCharges>"));
+        assert!(xml.contains("<detailsOfCharges>470503</detailsOfCharges>"));
         assert!(xml.contains("</ForeignTransaction>"));
-        assert!(!xml.contains("<bic>"));
     }
 
     #[test]
@@ -337,19 +332,19 @@ mod tests {
             currency: "USD".to_string(),
             amount: Decimal::new(200, 0),
             account_to: "US333".to_string(),
-            bic: None,
+            bic: "ALFHPKKAXXX".to_string(),
             date: "2024-03-01".to_string(),
             benef_name: "USD Recv".to_string(),
-            benef_street: None,
-            benef_city: None,
-            benef_country: None,
-            remittance_info1: None,
+            benef_street: "Street 1".to_string(),
+            benef_city: "City".to_string(),
+            benef_country: "US".to_string(),
+            remittance_info1: "Info".to_string(),
             remittance_info2: None,
             remittance_info3: None,
             remittance_info4: None,
             comment: None,
             payment_reason: "110".to_string(),
-            details_of_charges: "SHA".to_string(),
+            details_of_charges: DetailsOfCharges::Sender,
         }));
         let xml = import.to_xml();
         let domestic_pos = xml.find("<DomesticTransaction>");
